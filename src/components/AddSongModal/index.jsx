@@ -119,8 +119,6 @@ const AddSongModal = ({ open, onClose, onSave, songToEdit }) => {
   };
 
 
-    window.open(searchLinks[type], '_blank');
-  };
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
