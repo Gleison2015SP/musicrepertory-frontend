@@ -6,20 +6,14 @@ import {
   TextField,
   Button,
   Autocomplete,
-  CircularProgress,
-  IconButton,
-  InputAdornment,
-  Tooltip
+  CircularProgress
 } from '@mui/material';
 import { spotifyService } from '../../services/spotify';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import YouTubeIcon from '@mui/icons-material/YouTube';
-import MusicNoteIcon from '@mui/icons-material/MusicNote';
-import SearchIcon from '@mui/icons-material/Search';
-import ArticleIcon from '@mui/icons-material/Article';
+
 
 const AddSongModal = ({ open, onClose, onSave, songToEdit }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,8 +91,6 @@ const AddSongModal = ({ open, onClose, onSave, songToEdit }) => {
   // Gera links de busca para YouTube e Cifras
   const generateSearchLinks = (title, artist) => {
     const youtubeQuery = `${title} ${artist}`;
-    const cifraQuery = `${title} ${artist}`;
-    const lyricQuery = `${title} ${artist} letra`;
     
     return {
       youtube: `https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery)}`,
@@ -126,9 +118,7 @@ const AddSongModal = ({ open, onClose, onSave, songToEdit }) => {
     }
   };
 
-  // Abre link em nova aba
-  const handleSearchClick = (type) => {
-    const searchLinks = generateSearchLinks(formData.title, formData.artist);
+
     window.open(searchLinks[type], '_blank');
   };
 

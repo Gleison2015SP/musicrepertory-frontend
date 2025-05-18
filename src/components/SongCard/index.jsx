@@ -5,7 +5,7 @@ import {
   YouTube as YouTubeIcon,
   LibraryMusic as LibraryMusicIcon,
   Article as ArticleIcon,
-  Search as SearchIcon,
+
   Edit as EditIcon
 } from '@mui/icons-material';
 import { Tooltip } from '@mui/material';
@@ -34,8 +34,7 @@ const SongCard = ({ song, onDelete, onEdit }) => {
   // Gera links de busca
   const generateSearchLinks = (title, artist) => {
     const youtubeQuery = `${title} ${artist}`;
-    const cifraQuery = `${title} ${artist}`;
-    
+
     return {
       youtube: `https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery)}`,
       cifraclub: `https://www.cifraclub.com.br/${encodeURIComponent(artist.toLowerCase().replace(/ /g, '-'))}/${encodeURIComponent(title.toLowerCase().replace(/ /g, '-'))}`,
