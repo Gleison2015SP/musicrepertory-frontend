@@ -15,9 +15,17 @@ import PlaylistPlayIcon from '@mui/icons-material/PlaylistPlay';
 import SearchIcon from '@mui/icons-material/Search';
 import SongCard from '../../components/SongCard';
 import AddSongModal from '../../components/AddSongModal';
-import axios from 'axios';
+import FileHandler from '../../components/FileHandler';
 
-const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:3001/api') + '/songs';
+// Funções auxiliares para localStorage
+const loadSongsFromStorage = () => {
+  const stored = localStorage.getItem('songs');
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveSongsToStorage = (songs) => {
+  localStorage.setItem('songs', JSON.stringify(songs));
+};
 
 const Home = () => {
   const [songs, setSongs] = useState([]);
@@ -28,46 +36,14 @@ const Home = () => {
   const [selectedSong, setSelectedSong] = useState(null);
   const [filter, setFilter] = useState('all');
 
-  const fetchSongs = async () => {
-    console.log('Iniciando busca de músicas...');
+  const fetchSongs = () => {
     setLoading(true);
-    setError(null); // Limpa erro anterior
-
     try {
-      console.log('Fazendo requisição para:', API_URL);
-      const response = await axios.get(API_URL, {
-        timeout: 5000, // 5 segundos de timeout
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('Resposta completa:', response);
-      if (response.data) {
-        console.log('Dados recebidos:', response.data);
-        setSongs(response.data);
-      } else {
-        throw new Error('Resposta vazia do servidor');
-      }
+      const storedSongs = loadSongsFromStorage();
+      setSongs(storedSongs);
     } catch (err) {
       console.error('Erro ao carregar músicas:', err);
-      console.error('Detalhes do erro:', {
-        message: err.message,
-        code: err.code,
-        response: err.response?.data,
-        status: err.response?.status
-      });
-
-      // Mensagem de erro mais amigável
-      let errorMessage = 'Erro ao carregar músicas';
-      if (err.code === 'ECONNREFUSED') {
-        errorMessage = 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.';
-      } else if (err.response?.status === 404) {
-        errorMessage = 'Endpoint não encontrado no servidor.';
-      }
-
-      setError(errorMessage);
+      setError('Erro ao carregar músicas do armazenamento local');
     } finally {
       setLoading(false);
     }
@@ -78,67 +54,56 @@ const Home = () => {
     fetchSongs();
   }, []);
 
-  const handleAddSong = async (songData) => {
+  const handleAddSong = (songData) => {
     try {
-      console.log('Dados a serem enviados:', songData);
-      let response;
-
-      const dataToSend = {
-        title: songData.title,
-        artist: songData.artist,
-        album: songData.album || null,
-        releaseDate: songData.releaseDate || null,
-        genre: songData.genre || null,
-        youtubeLink: songData.youtubeLink || null,
-        chordLink: songData.chordLink || null
-      };
+      const currentSongs = loadSongsFromStorage();
+      let updatedSongs;
 
       if (songData.id) {
         // Editar música existente
-        console.log('Editando música ID:', songData.id);
-        response = await axios.put(`${API_URL}/${songData.id}`, dataToSend);
-        console.log('Música atualizada:', response.data);
+        updatedSongs = currentSongs.map(song => 
+          song.id === songData.id ? { ...songData } : song
+        );
       } else {
         // Adicionar nova música
-        response = await axios.post(API_URL, dataToSend);
-        console.log('Nova música criada:', response.data);
+        const newSong = {
+          ...songData,
+          id: Date.now(), // Usar timestamp como ID
+          createdAt: new Date().toISOString()
+        };
+        updatedSongs = [...currentSongs, newSong];
       }
 
+      saveSongsToStorage(updatedSongs);
+      setSongs(updatedSongs);
       setModalOpen(false);
       setSelectedSong(null);
-      fetchSongs();
     } catch (error) {
       console.error('Erro ao salvar música:', error);
       alert('Erro ao salvar música. Tente novamente.');
     }
   };
 
-  const handleDeleteSong = async (songId) => {
+  const handleDeleteSong = (songId) => {
     if (!songId) {
       console.error('ID da música não fornecido');
       return;
     }
-
-    console.log('handleDeleteSong chamado com ID:', songId);
     
     if (window.confirm('Tem certeza que deseja excluir esta música?')) {
       try {
-        const url = `${API_URL}/${songId}`;
-        console.log('Enviando requisição DELETE para:', url);
-        
-        const response = await axios.delete(url);
-        console.log('Resposta do DELETE:', response.data);
-        
-        // Atualiza a lista de músicas
-        await fetchSongs();
-      } catch (err) {
-        console.error('Erro ao deletar música:', err);
-        setError(err.message);
+        const currentSongs = loadSongsFromStorage();
+        const updatedSongs = currentSongs.filter(song => song.id !== songId);
+        saveSongsToStorage(updatedSongs);
+        setSongs(updatedSongs);
+      } catch (error) {
+        console.error('Erro ao deletar música:', error);
+        alert('Erro ao deletar música. Tente novamente.');
       }
     }
   };
 
-  const handleEditSong = async (song) => {
+  const handleEditSong = (song) => {
     setSelectedSong(song);
     setModalOpen(true);
   };
@@ -179,6 +144,10 @@ const Home = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 4 }}>
+        <FileHandler onImport={songs => {
+          saveSongsToStorage(songs);
+          setSongs(songs);
+        }} songs={songs} />
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" sx={{ display: 'flex', alignItems: 'center' }}>
             <PlaylistPlayIcon sx={{ mr: 1, fontSize: 40 }} />
